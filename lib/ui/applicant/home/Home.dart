@@ -1,3 +1,4 @@
+import 'package:dacn2/data/services/post-recommended.dart';
 import 'package:dacn2/ui/applicant/job/JobCart.dart';
 import 'package:flutter/material.dart';
 import 'package:dacn2/ui/applicant/home/company/topcompanies.dart';
@@ -11,6 +12,8 @@ import 'package:dacn2/data/models/user.dart';
 import 'package:dacn2/data/services/user_service.dart';
 import 'package:dacn2/data/models/company.dart';
 import 'package:dacn2/data/services/company_service.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   HomePage({Key? key}) : super(key: key);
@@ -37,6 +40,8 @@ class HomePageState extends State<HomePage> {
   late Future<List<PostResponse>> futurePostAtt;
   late Future<List<PostResponse>> futurePostSugg;
   final PostService postService = PostService(baseUrl: Util.baseUrl);
+  final RecommendedService recommendedService =
+      RecommendedService(baseUrl: Util.baseUrl);
   late int userId;
   @override
   void initState() {
@@ -90,32 +95,55 @@ class HomePageState extends State<HomePage> {
     }
   }
 
+  // Future<List<PostResponse>> _loadListJobSugg() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final userIdFromPrefs = prefs.getInt('userId');
+  //   if (userIdFromPrefs == null) {
+  //     throw Exception('User ID not found');
+  //   }
+  //   User user = await userService.getUserById(userIdFromPrefs);
+  //   String userLocation = user.location; // Vị trí của người dùng
+  //   String favoriteIndustries = user.desiredJob; // Ngành yêu thích
+  //   List<PostResponse> allPosts = await postService.getAllPosts();
+  //   List<PostResponse> filteredPosts = allPosts.where((job) {
+  //     return job.location == userLocation ||
+  //         favoriteIndustries.contains(job.title);
+  //   }).toList();
+  //   if (filteredPosts.length < 4) {
+  //     List<PostResponse> additionalPosts = allPosts
+  //         .where((job) => !filteredPosts.contains(job))
+  //         .take(4 - filteredPosts.length)
+  //         .toList();
+  //     filteredPosts.addAll(additionalPosts);
+  //   }
+  //   List<PostResponse> limitedPosts = filteredPosts.take(4).toList();
+  //   setState(() {
+  //     futurePostSugg = Future.value(limitedPosts);
+  //   });
+  //   return limitedPosts;
+  // }
   Future<List<PostResponse>> _loadListJobSugg() async {
     final prefs = await SharedPreferences.getInstance();
     final userIdFromPrefs = prefs.getInt('userId');
     if (userIdFromPrefs == null) {
       throw Exception('User ID not found');
     }
-    User user = await userService.getUserById(userIdFromPrefs);
-    String userLocation = user.location; // Vị trí của người dùng
-    String favoriteIndustries = user.desiredJob; // Ngành yêu thích
-    List<PostResponse> allPosts = await postService.getAllPosts();
-    List<PostResponse> filteredPosts = allPosts.where((job) {
-      return job.location == userLocation ||
-          favoriteIndustries.contains(job.title);
-    }).toList();
-    if (filteredPosts.length < 4) {
-      List<PostResponse> additionalPosts = allPosts
-          .where((job) => !filteredPosts.contains(job))
-          .take(4 - filteredPosts.length)
-          .toList();
-      filteredPosts.addAll(additionalPosts);
-    }
-    List<PostResponse> limitedPosts = filteredPosts.take(4).toList();
+    List<PostResponse> allPosts =
+        await recommendedService.getPostRecommendByUserId(userIdFromPrefs);
+    List<PostResponse> limitedPosts = allPosts.take(4).toList();
     setState(() {
       futurePostSugg = Future.value(limitedPosts);
     });
     return limitedPosts;
+    // // 1. Gửi request đến Flask API
+    // final recommendedIds =
+    //     await recommendedService.getPostRecommendByUserId(userIdFromPrefs);
+
+    // setState(() {
+    //   futurePostSugg = Future.value(recommendedIds);
+    //   print('futurePostSugg: $futurePostSugg');
+    // });
+    // return recommendedIds;
   }
 
   // Future<void> _loadCompanies() async {
@@ -171,6 +199,44 @@ class HomePageState extends State<HomePage> {
               ),
               const Divider(
                 color: Colors.black,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Gợi ý việc làm',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    FutureBuilder<List<PostResponse>>(
+                      future: futurePostSugg,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Center(child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Center(child: Text('Lỗi: ${snapshot.error}'));
+                        } else if (!snapshot.hasData ||
+                            snapshot.data!.isEmpty) {
+                          return Center(child: Text('Không có bài post nào'));
+                        } else {
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            itemCount: snapshot.data!.length,
+                            itemBuilder: (context, index) {
+                              return JobCart(
+                                postResponse: snapshot.data![index],
+                              );
+                            },
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
               // Latest Job Listings
               Padding(
@@ -250,44 +316,7 @@ class HomePageState extends State<HomePage> {
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Gợi ý việc làm',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    FutureBuilder<List<PostResponse>>(
-                      future: futurePostSugg,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(child: CircularProgressIndicator());
-                        } else if (snapshot.hasError) {
-                          return Center(child: Text('Lỗi: ${snapshot.error}'));
-                        } else if (!snapshot.hasData ||
-                            snapshot.data!.isEmpty) {
-                          return Center(child: Text('Không có bài post nào'));
-                        } else {
-                          return ListView.builder(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            itemCount: snapshot.data!.length,
-                            itemBuilder: (context, index) {
-                              return JobCart(
-                                postResponse: snapshot.data![index],
-                              );
-                            },
-                          );
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
+
               // Padding(
               //   padding: const EdgeInsets.symmetric(horizontal: 8.0),
               //   child: Column(

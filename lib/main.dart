@@ -1,3 +1,5 @@
+import 'package:dacn2/data/util/EnterIpScreen.dart';
+import 'package:dacn2/data/util/Util.dart';
 import 'package:dacn2/ui/admin/company/admin_company.dart';
 import 'package:dacn2/ui/admin/admin_user.dart';
 import 'package:dacn2/ui/admin/blog/admi_blog.dart';
@@ -19,19 +21,24 @@ import 'package:dacn2/ui/employer/home/EmployerHomeScreen.dart';
 import 'package:dacn2/ui/employer/profile/ProfileEmployer.dart';
 
 void main() async {
-  await dotenv.load(fileName: ".env"); // Nạp file .env
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  int? userId = prefs.getInt('userId');
-  final roles = prefs.getInt('roles');
-  // In ra giá trị của userId và roles
-  print('userId: $userId, roles: $roles');
+  String? serverIp = prefs.getString('server_ip');
   String initialRoute;
-  if (userId == null || roles == null) {
-    initialRoute = '/login';
+
+  if (serverIp == null || serverIp.isEmpty) {
+    initialRoute = '/enterIp';
   } else {
-    if (roles == 1) {
+    Util.baseUrl = 'http://$serverIp:8080/DreamJob';
+    Util.Ip = 'http://$serverIp';
+    int? userId = prefs.getInt('userId');
+    final roles = prefs.getInt('roles');
+
+    if (userId == null || roles == null) {
+      initialRoute = '/login';
+    } else if (roles == 1) {
       initialRoute = '/homescreen';
     } else if (roles == 2) {
       initialRoute = '/employerhome';
@@ -41,7 +48,8 @@ void main() async {
       initialRoute = '/login';
     }
   }
-  runApp(MyApp(initialRoute: initialRoute, userId: userId));
+
+  runApp(MyApp(initialRoute: initialRoute, userId: prefs.getInt('userId')));
 }
 
 Future<void> clearSharedPreferences() async {
@@ -66,6 +74,7 @@ class MyApp extends StatelessWidget {
       // Cấu hình routes
       initialRoute: initialRoute,
       routes: {
+        '/enterIp': (context) => EnterIpScreen(), // Màn nhập IP
         '/': (context) => OnboardingScreen(), // Màn hình Onboarding
         '/login': (context) => LoginScreen(), // Màn hình Login
         '/register': (context) => RegisterScreen(),

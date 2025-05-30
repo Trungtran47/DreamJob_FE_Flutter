@@ -56,7 +56,7 @@ class _AdminHomeState extends State<AdminHome> {
           ),
         ),
       ),
-      drawer:  SlideMenu(),
+      drawer: SlideMenu(),
       body: isLoading
           ? const Center(
               child: CircularProgressIndicator(),

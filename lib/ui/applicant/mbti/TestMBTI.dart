@@ -14,7 +14,7 @@ class _TestMBTIPageState extends State<TestMBTIPage> {
   bool isLoading = false; // Theo dõi trạng thái tải
   _TestMBTIPageState()
       : _model = GenerativeModel(
-          model: 'gemini-pro',
+          model: 'models/gemini-1.5-flash',
           apiKey: dotenv.env['GOOGLE_API_KEY']!,
         );
 

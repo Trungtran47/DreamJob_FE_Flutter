@@ -6,7 +6,7 @@ class ChatService {
 
   ChatService()
       : _model = GenerativeModel(
-          model: 'gemini-pro',
+          model: 'models/gemini-1.5-flash',
           apiKey: dotenv.env['GOOGLE_API_KEY']!,
         );
 
@@ -16,6 +16,7 @@ class ChatService {
       final response = await _model.generateContent(content);
       return response.text ?? 'No response';
     } catch (e) {
+      print('Error: $e');
       return 'Error: $e';
     }
   }

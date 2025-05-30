@@ -91,7 +91,7 @@ class _LoginScreenPageState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      // Xử lý sự kiện quên mật khẩu
+                      Navigator.pushNamed(context, '/enterIp');
                     },
                     child: Text("Quên mật khẩu?",
                         style: TextStyle(color: Colors.grey)),

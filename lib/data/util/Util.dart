@@ -1,3 +1,4 @@
 class Util {
-  static const String baseUrl = 'http://192.168.222.201:8080/DreamJob';
+  static String baseUrl = ''; // Giữ lại đoạn này để sau có thể cập nhật
+  static String Ip = '';
 }

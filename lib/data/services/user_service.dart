@@ -26,7 +26,8 @@ class UserService {
         throw Exception('Empty response body');
       }
     } else {
-      throw Exception(' ${response.body}');
+      throw Exception('Lỗi host');
+      // throw Exception(' ${response.body}');
     }
   }
 
@@ -49,8 +50,9 @@ class UserService {
         throw Exception(' ${response.body}');
       }
     } catch (e) {
-      print('Error occurred while logging in: $e');
-      throw Exception('$e');
+      throw Exception('Lỗi host');
+      print('Lỗi: $e');
+      // throw Exception('$e');
     }
   }
 
